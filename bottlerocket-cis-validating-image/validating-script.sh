@@ -1,7 +1,5 @@
 #set -Eeuo pipefail
 
-#sleep 9000000
-
 Num_Of_Checks_Passed=0
 Total_Num_Of_Checks=10
 

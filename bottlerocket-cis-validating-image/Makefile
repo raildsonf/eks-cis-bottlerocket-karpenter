@@ -1,13 +1,9 @@
 #!/bin/bash -xs
 
-IMAGE_REPO ?= ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+IMAGE_REPO ?= ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 IMAGE_NAME ?= ${ECR_REPO}
-#IMAGE_NAME=$1
-
 
 IMAGE_TAG ?= latest
-#IMAGE_TAG ?= test
-
 
 PWD := $(shell pwd)
 BASE_DIR := $(shell basename $(PWD))

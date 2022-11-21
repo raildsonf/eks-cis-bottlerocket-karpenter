@@ -3,7 +3,7 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: multi-region-blog-eks1
+  name: bottlerocket-cis-blog-eks
   region: us-east-1
   version: '1.23'
 
@@ -20,19 +20,22 @@ managedNodeGroups:
           - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
     ssh:
         allow: false
-        #publicKeyName: awsajp_keypair
     bottlerocket:
       settings:
         motd: "Hello from eksctl! - custom user data for Bottlerocket"
         bootstrap-containers:
+          # 3.4
           cis-bootstrap:
-            source: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-bootstrap-image:latest
+            source: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BOOTSTRAP_ECR_REPO:latest
             mode: once
         kernel:
+          # 1.5.2
           lockdown: "integrity"
           modules:
+            # 1.1.1.1
             udf:
               allowed: false
+            # 3.3.1
             sctp:
               allowed: false
           sysctl:

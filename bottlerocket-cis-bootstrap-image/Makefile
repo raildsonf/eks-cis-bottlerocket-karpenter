@@ -1,12 +1,9 @@
 #!/bin/bash -xs
 
-IMAGE_REPO ?= ${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-IMAGE_NAME ?= ${ECR_REPO}
-#IMAGE_NAME=$1
-
+IMAGE_REPO ?= ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+IMAGE_NAME ?= ${BOOTSTRAP_ECR_REPO}
 
 IMAGE_TAG ?= latest
-
 
 PWD := $(shell pwd)
 BASE_DIR := $(shell basename $(PWD))
@@ -32,9 +29,9 @@ all: image
 image: build-image push-image
 
 build-image: 
-	@echo "Building the docker image: $(IMAGE_NAME):$(IMAGE_TAG) using ${ECR_REPO}/Dockerfile..."
+	@echo "Building the docker image: $(IMAGE_NAME):$(IMAGE_TAG) using ${BOOTSTRAP_ECR_REPO}/Dockerfile..."
 	@docker build --no-cache  -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) .
-	#@docker build --no-cache -f ./${ECR_REPO}/Dockerfile -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) 
+	#@docker build --no-cache -f ./${BOOTSTRAP_ECR_REPO}/Dockerfile -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) 
 
 push-image: build-image
 	@echo "Pushing the docker image for $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) ..."	
