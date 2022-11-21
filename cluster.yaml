@@ -8,7 +8,7 @@ metadata:
   version: '1.23'
 
 managedNodeGroups:
-  - name: bottlerocket-mng
+  - name: bottlerocket-mng2
     instanceType: m5.large
     desiredCapacity: 1
     amiFamily: Bottlerocket
@@ -26,7 +26,7 @@ managedNodeGroups:
         motd: "Hello from eksctl! - custom user data for Bottlerocket"
         bootstrap-containers:
           cis-bootstrap:
-            source: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bottlerocket-cis-bootstrap-image:latest
+            source: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-bootstrap-image:latest
             mode: once
         kernel:
           lockdown: "integrity"
@@ -41,6 +41,7 @@ managedNodeGroups:
                "net.ipv4.conf.default.send_redirects": "0"
                
                # 3.2.2
+               "net.ipv4.conf.all.accept_redirects": "0"
                "net.ipv4.conf.default.accept_redirects": "0"
                "net.ipv6.conf.all.accept_redirects": "0"
                "net.ipv6.conf.default.accept_redirects": "0"

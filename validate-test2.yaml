@@ -2,27 +2,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: validate-test
+  name: validate-test2
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: validate-test
+      app.kubernetes.io/name: validate-test2
   replicas: 1
   template:
     
     metadata:
       labels:
-        app.kubernetes.io/name: validate-test
+        app.kubernetes.io/name: validate-test2
     spec:
       hostNetwork: true
       nodeSelector:
          eks.amazonaws.com/nodegroup: bottlerocket-mng2
       containers:
-      - image: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-validating-image:test
+      - image: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-validating-image
         #command: ["sleep", "100000"]
         securityContext:
           privileged: true      
         imagePullPolicy: Always
-        name: validate-test
+        name: validate-test2
       
 ---

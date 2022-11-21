@@ -5,8 +5,8 @@ IMAGE_NAME ?= ${ECR_REPO}
 #IMAGE_NAME=$1
 
 
-IMAGE_TAG ?= latest
-#IMAGE_TAG ?= test
+#IMAGE_TAG ?= latest
+IMAGE_TAG ?= test
 
 
 PWD := $(shell pwd)
