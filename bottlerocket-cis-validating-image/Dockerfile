@@ -2,5 +2,6 @@ FROM alpine
 COPY ./validating-script.sh /
 RUN chmod +x /validating-script.sh
 RUN apk update && apk add bash && apk add iptables && apk add ip6tables
-#ENTRYPOINT ["/validating-script.sh"]
-CMD ["/bin/sh", "-c", "/validating-script.sh"]
+ENTRYPOINT ["bash", "/validating-script.sh"]
+#CMD ["/bin/sh", "-c", "/validating-script.sh"]
+#CMD ["/bin/sh", "-c", "/validating-script.sh"]
