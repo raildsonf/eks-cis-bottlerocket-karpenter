@@ -33,7 +33,7 @@ image: build-image push-image
 
 build-image: 
 	@echo "Building the docker image: $(IMAGE_NAME):$(IMAGE_TAG) using ${ECR_REPO}/Dockerfile..."
-	@docker build --no-cache  -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) -f ${ECR_REPO}/Dockerfile
+	@docker build --no-cache  -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) .
 	#@docker build --no-cache -f ./${ECR_REPO}/Dockerfile -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) 
 
 push-image: build-image

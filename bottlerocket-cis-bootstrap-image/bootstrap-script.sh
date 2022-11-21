@@ -7,12 +7,9 @@
 iptables -F
 
 # 3.4.1.1 Ensure IPv4 default deny firewall policy (Automated)
-iptables -P INPUT DROP
-iptables -P OUTPUT DROP
+#iptables -P INPUT DROP # this is need to allows K8s use cases such as kubectl exec/logs
+ptables -P OUTPUT DROP
 iptables -P FORWARD DROP
-
-# Allow inbound traffic for kubelet (so kubectl logs/exec works)
-iptables -I INPUT -p tcp -m tcp --dport 10250 -j ACCEPT
 
 # 3.4.1.2 Ensure IPv4 loopback traffic is configured (Automated)
 iptables -A INPUT -i lo -j ACCEPT
