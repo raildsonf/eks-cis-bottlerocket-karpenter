@@ -172,7 +172,7 @@ OutputAccept=$(ip6tables -L OUTPUT -v -n | grep "ACCEPT     all" | awk '{print $
 #echo $OutputAccept
 
 
-if [[ $InputAccept == "::/0" ]] && [[ $InputDrop == "::/1" ]] && [[ $OutputAccept == "::/0" ]];
+if [[ $InputAccept == "::/0" ]] && [[ $InputDrop == "::1" ]] && [[ $OutputAccept == "::/0" ]];
 then
     echo "[PASS] $RECOMMENDATION"
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
