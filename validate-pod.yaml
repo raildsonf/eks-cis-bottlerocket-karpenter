@@ -8,7 +8,7 @@ spec:
      eks.amazonaws.com/nodegroup: bottlerocket-mng2  
   containers:
   - name: validate-pod
-    image: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-validating-image
+    image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$VALIDATION_ECR_REPO
     imagePullPolicy: Always
     securityContext:
       privileged: true

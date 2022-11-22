@@ -1,11 +1,7 @@
 #!/bin/bash -xs
 
 IMAGE_REPO ?= ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-<<<<<<< HEAD
-IMAGE_NAME ?= ${ECR_VALIDATING_REPO}
-=======
 IMAGE_NAME ?= ${VALIDATION_ECR_REPO}
->>>>>>> 5b92aafb9d9559e5e6c6260765de55e52afcbdb4
 
 IMAGE_TAG ?= latest
 
