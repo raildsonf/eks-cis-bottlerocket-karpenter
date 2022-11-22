@@ -1,5 +1,7 @@
 #set -Eeuo pipefail
 
+#sleep 9000000
+
 Num_Of_Checks_Passed=0
 Total_Num_Of_Checks=10
 
@@ -84,7 +86,7 @@ then
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
 else
     echo "[FAIL] $RECOMMENDATION"
-    echo "Error Message: inputChain=$inputChain ForwardChain=ForwardChain OutputChain=$OutputChain"
+    echo "Error Message: inputChain=$inputChain ForwardChain=$ForwardChain OutputChain=$OutputChain"
 fi
 
 RECOMMENDATION="3.4.1.2 Ensure IPv4 loopback traffic is configured (Automated)"

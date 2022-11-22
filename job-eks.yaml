@@ -13,6 +13,7 @@ spec:
       containers:
         - name: eks-cis-benchmark
           image: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-validating-image
+          imagePullPolicy: Always
           securityContext:
             privileged: true
       restartPolicy: Never
