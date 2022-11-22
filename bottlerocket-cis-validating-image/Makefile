@@ -1,7 +1,11 @@
 #!/bin/bash -xs
 
 IMAGE_REPO ?= ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+<<<<<<< HEAD
 IMAGE_NAME ?= ${ECR_VALIDATING_REPO}
+=======
+IMAGE_NAME ?= ${VALIDATION_ECR_REPO}
+>>>>>>> 5b92aafb9d9559e5e6c6260765de55e52afcbdb4
 
 IMAGE_TAG ?= latest
 
@@ -29,9 +33,9 @@ all: image
 image: build-image push-image
 
 build-image: 
-	@echo "Building the docker image: $(IMAGE_NAME):$(IMAGE_TAG) using ${ECR_REPO}/Dockerfile..."
+	@echo "Building the docker image: $(IMAGE_NAME):$(IMAGE_TAG) using ${VALIDATION_ECR_REPO}/Dockerfile..."
 	@docker build --no-cache  -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) .
-	#@docker build --no-cache -f ./${ECR_REPO}/Dockerfile -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) 
+	#@docker build --no-cache -f ./${VALIDATION_ECR_REPO}/Dockerfile -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) 
 
 push-image: build-image
 	@echo "Pushing the docker image for $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) ..."	
