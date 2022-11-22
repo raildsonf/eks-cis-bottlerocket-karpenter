@@ -7,7 +7,7 @@ spec:
   ttlSecondsAfterFinished: 600
   template:
     spec:
-      hostPID: true
+      hostNetwork: true
       nodeSelector:
          eks.amazonaws.com/nodegroup: bottlerocket-mng2      
       containers:
