@@ -12,7 +12,7 @@ spec:
          eks.amazonaws.com/nodegroup: bottlerocket-mng2      
       containers:
         - name: eks-cis-benchmark
-          image: $AWS_ACCOUNT_NAME.dkr.ecr.$AWS_REGION.amazonaws.com/$VALIDATION_ECR_REPO
+          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$VALIDATION_ECR_REPO
           securityContext:
             privileged: true
       restartPolicy: Never
