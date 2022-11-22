@@ -80,7 +80,7 @@ ForwardChain=$(iptables -L | grep "Chain FORWARD" | awk '{print $4}')
 OutputChain=$(iptables -L | grep "Chain OUTPUT" | awk '{print $4}' )
 #echo $OutputChain
 
-if [[ $inputChain == "ACCEPT)" ]] && [[ $ForwardChain == "ACCEPT)" ]] && [[ $OutputChain == "DROP)" ]];
+if [[ $inputChain == "DROP)" ]] && [[ $ForwardChain == "DROP)" ]] && [[ $OutputChain == "DROP)" ]];
 then
     echo "[PASS] $RECOMMENDATION"
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
@@ -109,7 +109,7 @@ else
 fi
 
 RECOMMENDATION="3.4.1.3 Ensure IPv4 outbound and established connections are configured (Manual)"
-InputTCP=$(iptables -L INPUT -v -n | grep "ACCEPT     tcp" | awk '{print $11}')
+InputTCP=$(iptables -L INPUT -v -n | grep "ACCEPT     tcp" | grep state | awk '{print $11}')
 #echo $InputTCP
 
 InputUDP=$(iptables -L INPUT -v -n | grep "ACCEPT     udp" | awk '{print $11}')
@@ -150,7 +150,7 @@ OutputChainLine=$(ip6tables -L | grep "Chain OUTPUT" )
 OutputChain=` echo $OutputChainLine | awk '{print $4}' `
 #echo $OutputChain
 
-if [[ $inputChain == "ACCEPT)" ]] && [[ $ForwardChain == "DROP)" ]] && [[ $OutputChain == "DROP)" ]];
+if [[ $inputChain == "DROP)" ]] && [[ $ForwardChain == "DROP)" ]] && [[ $OutputChain == "DROP)" ]];
 then
     echo "[PASS] $RECOMMENDATION"
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))

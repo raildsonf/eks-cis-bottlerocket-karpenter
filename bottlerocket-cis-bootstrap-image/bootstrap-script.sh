@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# This file should not change unless the CIS benchmark for Bottlerocket changes
-# If changes are needed, perform a Docker build and push the image to the shared ECR repo
-
 # Flush iptables rules
 iptables -F
 
@@ -31,9 +28,12 @@ iptables -A INPUT -p icmp -m state --state ESTABLISHED -j ACCEPT
 ip6tables -F
 
 # 3.4.2.1 Ensure IPv6 default deny firewall policy (Automated)
-#ip6tables -P INPUT DROP # this is need to allows K8s use cases such as kubectl exec/logs
+ip6tables -P INPUT DROP
 ip6tables -P OUTPUT DROP
 ip6tables -P FORWARD DROP
+
+# Allow inbound traffic for kubelet on ipv6 if needed (so kubectl logs/exec works)
+# ip6tables -A INPUT -p tcp --destination-port 10250 -j ACCEPT
 
 # 3.4.2.2 Ensure IPv6 loopback traffic is configured (Automated)
 ip6tables -A INPUT -i lo -j ACCEPT
