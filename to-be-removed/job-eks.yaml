@@ -12,10 +12,13 @@ spec:
     spec:
       hostNetwork: true
       nodeSelector:
-         eks.amazonaws.com/nodegroup: bottlerocket-mng2      
+         eks.amazonaws.com/nodegroup: bottlerocket-mng     
       containers:
         - name: eks-cis-benchmark
-          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$VALIDATION_ECR_REPO
+          image: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-validating-image
+          imagePullPolicy: Always
           securityContext:
-            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]          
+            #privileged: true
       restartPolicy: Never

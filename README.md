@@ -201,3 +201,15 @@ This tool validates the Amazon EKS optimized AMI against CIS Bottlerocket Benchm
 10/10 checks passed
 ```
 
+Cleanup
+
+```bash
+kubectl delete -f job-eks.yaml
+kubectl delete -f deploy-nginx.yaml
+eksctl delete cluster -f cluster.yaml --wait
+aws ecr delete-repository  --repository-name ${BOOTSTRAP_ECR_REPO}  --force
+aws ecr delete-repository  --repository-name ${VALIDATION_ECR_REPO}  --force
+
+```
+
+
