@@ -33,7 +33,7 @@ ip6tables -P OUTPUT DROP
 ip6tables -P FORWARD DROP
 
 # Allow inbound traffic for kubelet on ipv6 if needed (so kubectl logs/exec works)
-# ip6tables -A INPUT -p tcp --destination-port 10250 -j ACCEPT
+ip6tables -A INPUT -p tcp --destination-port 10250 -j ACCEPT
 
 # 3.4.2.2 Ensure IPv6 loopback traffic is configured (Automated)
 ip6tables -A INPUT -i lo -j ACCEPT

@@ -1,108 +1,50 @@
-# eks-cis-bottlerocket
+# Validating Amazon EKS optimized Bottlerocket AMI against the CIS Benchmark
 
-text for the bash command
+You will also need to configure the following environment variables:
 
 ```bash
 export AWS_REGION=us-east-1 
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
-#export CLUSTER_NAME=eks-cis-bottlerocket
-export CLUSTER_NAME=multi-region-blog-eks1
-export ECR_BOOTSTRAP_REPO=bottlerocket-cis-bootstrap-image
-export ECR_VALIDATING_REPO=bottlerocket-cis-validating-image
-
-aws ssm start-session --target i-088d8e232a04f262d
-
-
-eksctl create nodegroup -f cluster.yaml
-
-git clone https://github.com/jalawala/eks-cis-bottlerocket.git
-cd eks-cis-bottlerocket
-
-IMAGE_REPO="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-
-export ECR_REPO=${ECR_BOOTSTRAP_REPO}
-
-IMAGE_NAME=${ECR_BOOTSTRAP_REPO}
-export ECR_BOOTSTRAP_REPO_URI=$(aws ecr describe-repositories --repository-name ${IMAGE_NAME}  | jq -r '.repositories[0].repositoryUri')
-
-if [ -z "$ECR_BOOTSTRAP_REPO_URI" ]
-then
-      echo "${IMAGE_REPO}/${IMAGE_NAME} does not exist. So creating it..."
-      ECR_BOOTSTRAP_REPO_URI=$(aws ecr create-repository \
-        --repository-name $IMAGE_NAME\
-        --region $AWS_REGION \
-        --query 'repository.repositoryUri' \
-        --output text)
-      echo "ECR_BOOTSTRAP_REPO_URI=$ECR_BOOTSTRAP_REPO_URI"
-else
-      echo "${IMAGE_REPO}/${IMAGE_NAME} already exist..."
-fi
-
-cd bottlerocket-cis-bootstrap-image
-make  
-
-export ECR_REPO=${ECR_VALIDATING_REPO}
-
-IMAGE_NAME=${ECR_VALIDATING_REPO}
-
-export ECR_VALIDATING_REPO_URI=$(aws ecr describe-repositories --repository-name ${IMAGE_NAME}  | jq -r '.repositories[0].repositoryUri')
-
-if [ -z "$ECR_VALIDATING_REPO_URI" ]
-then
-      echo "${IMAGE_REPO}/${IMAGE_NAME} does not exist. So creating it..."
-      ECR_VALIDATING_REPO_URI=$(aws ecr create-repository \
-        --repository-name $IMAGE_NAME\
-        --region $AWS_REGION \
-        --query 'repository.repositoryUri' \
-        --output text)
-      echo "ECR_VALIDATING_REPO_URI=$ECR_VALIDATING_REPO_URI"
-else
-      echo "${IMAGE_REPO}/${IMAGE_NAME} already exist..."
-fi
-
-cd ../bottlerocket-cis-validating-image/
-make
-000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-validating-image does not exist. So creating it...
-ECR_VALIDATING_REPO_URI=000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-validating-image
-
-
-
+export CLUSTER_NAME=bottlerocket-cis-blog-eks
+#export CLUSTER_NAME=multi-region-blog-eks1
+export BOOTSTRAP_ECR_REPO=bottlerocket-cis-bootstrap-image
+export VALIDATION_ECR_REPO=bottlerocket-cis-validating-image
 
 ```
-text for the bash command
+
+## Building a bootstrap container image
+
+create an Amazon ECR repository
 
 ```bash
+cd bottlerocket-cis-bootstrap-image
+chmod +x create-ecr-repo.sh
+./create-ecr-repo.sh
+```
 
-br-mng-v1-1
+build the bootstrap container image and push
 
-ip-192-168-46-170.ec2.internal
-aws ssm start-session --target i-0efa5093c33610899
+```bash
+make
 
+```
+Create Amazon EKS Cluster with EKS Managed Node group with Bottlerocket AMI
 
-
-aws ssm start-session --target i-053b69fa7e3861413
-
-
-
-multi-region-blog-eks1
-
-
-
-
+```bash
 cat > cluster.yaml <<EOF
 ---
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: multi-region-blog-eks1
-  region: us-east-1
-  version: '1.23'
+  name: $CLUSTER_NAME
+  region: $AWS_REGION
+  version: '1.24'
 
 managedNodeGroups:
-  - name: bottlerocket-mng2
+  - name: bottlerocket-mng
     instanceType: m5.large
-    desiredCapacity: 1
+    desiredCapacity: 2
     amiFamily: Bottlerocket
     iam:
        attachPolicyARNs:
@@ -112,19 +54,22 @@ managedNodeGroups:
           - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
     ssh:
         allow: false
-        #publicKeyName: awsajp_keypair
     bottlerocket:
       settings:
         motd: "Hello from eksctl! - custom user data for Bottlerocket"
         bootstrap-containers:
+          # 3.4
           cis-bootstrap:
-            source: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/bottlerocket-cis-bootstrap-image:latest
+            source: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BOOTSTRAP_ECR_REPO:latest
             mode: once
         kernel:
+          # 1.5.2
           lockdown: "integrity"
           modules:
+            # 1.1.1.1
             udf:
               allowed: false
+            # 3.3.1
             sctp:
               allowed: false
           sysctl:
@@ -147,98 +92,112 @@ managedNodeGroups:
                "net.ipv4.conf.default.log_martians": "1"
 EOF
 
+```
+Create the cluster
 
+```bash
 eksctl create cluster -f cluster.yaml
+```
+Once cluster is created, ensure that kubectl works fine.
 
-bottlerocket-mng2
+```bash
+kubectl get nodes
+```
+
+Once the cluster has been provisioned, you can verify the bootstrap container ran successfully on the Bottlerocket host. 
+
+```bash
+aws ssm start-session --target $(aws ec2 describe-instances --filters "Name=tag:Name,Values=bottlerocket-cis-blog-eks-bottlerocket-mng-Node" | jq -r '.[][0]["Instances"][0]["InstanceId"]')
+[ssm-user@control]$ enter-admin-container
+[root@admin]# sudo sheltie
+bash-5.1# journalctl -u bootstrap-containers@cis-bootstrap.service
+
+```
+deploy a sample application to make sure everything is running properly.
+
+```bash
+kubectl apply -f deploy-nginx.yaml
+kubectl get pod
+```
+
+```bash
+root@nginx-74d589986c-xqkqb:/# curl 127.0.0.1:80
 
 ```
 
-text for the bash command
+Run below command to access the logs from the pod
+
+```bash
+kubectl logs -f  $POD_NAME
+```
+
+Validating the Bottlerocket AMI against the CIS Benchmark
+
+```bash
+cd bottlerocket-cis-validating-image
+chmod +x create-ecr-repo.sh
+./create-ecr-repo.sh
+```
+
+job object which references the validation image onto the cluster.
 
 ```bash
 
+cd ..
+cat > job-eks.yaml <<EOF
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eks-cis-benchmark
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app: eks-cis-benchmark   
+    spec:
+      hostNetwork: true
+      nodeSelector:
+         eks.amazonaws.com/nodegroup: bottlerocket-mng    
+      containers:
+        - name: eks-cis-benchmark
+          image: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$VALIDATION_ECR_REPO
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+      restartPolicy: Never
+EOF
+
 ```
 
-text for the bash command
+Apply the batch job using kubectl and check if the pod completed the execution.
 
 ```bash
-
+kubectl apply -f job-eks.yaml
+kubectl get Job,pod
 ```
-text for the bash command
+we can view the pod logs to verify the CIS Bottlerocket Benchmark compliance status of the node.
+
 
 ```bash
-
+POD_NAME=$(kubectl get pods -l=app=eks-cis-benchmark -o=jsonpath={.items..metadata.name})
+kubectl logs $POD_NAME
 ```
-text for the bash command
+The output should look like below.
 
 ```bash
-
+This tool validates the Amazon EKS optimized AMI against CIS Bottlerocket Benchmark v1.0.0
+[PASS] 3.1.1 Ensure packet redirect sending is disabled (Automated)
+[PASS] 3.2.2 Ensure ICMP redirects are not accepted (Automated)
+[PASS] 3.2.3 Ensure secure ICMP redirects are not accepted (Automated)
+[PASS] 3.2.4 Ensure suspicious packets are logged (Automated)
+[PASS] 3.4.1.1 Ensure IPv4 default deny firewall policy (Automated)
+[PASS] 3.4.1.2 Ensure IPv4 loopback traffic is configured (Automated)
+[PASS] 3.4.1.3 Ensure IPv4 outbound and established connections are configured (Manual)
+[PASS] 3.4.2.1 Ensure IPv6 default deny firewall policy (Automated)
+[PASS] 3.4.2.2 Ensure IPv6 loopback traffic is configured (Automated)
+[PASS] 3.4.2.3 Ensure IPv6 outbound and established connections are configured (Manual)
+10/10 checks passed
 ```
 
-text for the bash command
-
-```bash
-
-```
-
-text for the bash command
-
-```bash
-
-```
-text for the bash command
-
-```bash
-
-```
-text for the bash command
-
-```bash
-
-```
-
-
-text for the bash command
-
-```bash
-
-```
-
-text for the bash command
-
-```bash
-
-```
-text for the bash command
-
-```bash
-
-```
-text for the bash command
-
-```bash
-
-```
-
-text for the bash command
-
-```bash
-
-```
-
-text for the bash command
-
-```bash
-
-```
-text for the bash command
-
-```bash
-
-```
-text for the bash command
-
-```bash
-
-```

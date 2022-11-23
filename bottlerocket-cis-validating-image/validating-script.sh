@@ -1,13 +1,11 @@
-#set -Eeuo pipefail
-
-#sleep 9000000
+echo "This tool validates the Amazon EKS optimized AMI against CIS Bottlerocket Benchmark v1.0.0"
 
 Num_Of_Checks_Passed=0
 Total_Num_Of_Checks=10
 
-function F3()
+function checkSysctlConfig()
 {
-    for str in ${myArray[@]}; do
+    for str in ${sysctlList[@]}; do
        v1=$(sysctl $str | awk '{print $3}' )
        if [[ "$v1" != $expectedValue ]] 
        then
@@ -18,9 +16,9 @@ function F3()
 }
 
 RECOMMENDATION="3.1.1 Ensure packet redirect sending is disabled (Automated)"
-myArray=("net.ipv4.conf.all.send_redirects" "net.ipv4.conf.default.send_redirects")
+sysctlList=("net.ipv4.conf.all.send_redirects" "net.ipv4.conf.default.send_redirects")
 expectedValue=0
-F3
+checkSysctlConfig
 
 
 if [ "$?" -eq "1" ]; then
@@ -31,9 +29,9 @@ else
 fi
 
 RECOMMENDATION="3.2.2 Ensure ICMP redirects are not accepted (Automated)"
-myArray=("net.ipv4.conf.all.accept_redirects" "net.ipv4.conf.default.accept_redirects" "net.ipv6.conf.all.accept_redirects" "net.ipv6.conf.default.accept_redirects")
+sysctlList=("net.ipv4.conf.all.accept_redirects" "net.ipv4.conf.default.accept_redirects" "net.ipv6.conf.all.accept_redirects" "net.ipv6.conf.default.accept_redirects")
 expectedValue=0
-F3
+checkSysctlConfig
 
 
 if [ "$?" -eq "1" ]; then
@@ -44,9 +42,9 @@ else
 fi
 
 RECOMMENDATION="3.2.3 Ensure secure ICMP redirects are not accepted (Automated)"
-myArray=("net.ipv4.conf.all.secure_redirects" "net.ipv4.conf.default.secure_redirects")
+sysctlList=("net.ipv4.conf.all.secure_redirects" "net.ipv4.conf.default.secure_redirects")
 expectedValue=0
-F3
+checkSysctlConfig
 
 
 if [ "$?" -eq "1" ]; then
@@ -57,9 +55,9 @@ else
 fi
 
 RECOMMENDATION="3.2.4 Ensure suspicious packets are logged (Automated)"
-myArray=("net.ipv4.conf.all.log_martians" "net.ipv4.conf.default.log_martians")
+sysctlList=("net.ipv4.conf.all.log_martians" "net.ipv4.conf.default.log_martians")
 expectedValue=1
-F3
+checkSysctlConfig
 
 
 if [ "$?" -eq "1" ]; then
@@ -80,7 +78,7 @@ ForwardChain=$(iptables -L | grep "Chain FORWARD" | awk '{print $4}')
 OutputChain=$(iptables -L | grep "Chain OUTPUT" | awk '{print $4}' )
 #echo $OutputChain
 
-if [[ $inputChain == "DROP)" ]] && [[ $ForwardChain == "DROP)" ]] && [[ $OutputChain == "DROP)" ]];
+if [[ $inputChain == "DROP)" ]] && [[ $ForwardChain == "ACCEPT)" ]] && [[ $OutputChain == "DROP)" ]];
 then
     echo "[PASS] $RECOMMENDATION"
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
@@ -156,7 +154,7 @@ then
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
 else
     echo "[FAIL] $RECOMMENDATION"
-    echo "Error Message: inputChain=$inputChain ForwardChain=ForwardChain OutputChain=$OutputChain"
+    echo "Error Message: inputChain=$inputChain ForwardChain=$ForwardChain OutputChain=$OutputChain"
 fi
 
 
@@ -183,7 +181,7 @@ fi
 
 
 RECOMMENDATION="3.4.2.3 Ensure IPv6 outbound and established connections are configured (Manual)"
-InputTCP=$(ip6tables -L INPUT -v -n | grep "ACCEPT     tcp" | awk '{print $10}')
+InputTCP=$(ip6tables -L INPUT -v -n | grep "ACCEPT     tcp" | grep ESTABLISHED | awk '{print $10}')
 #echo $InputTCP
 
 InputUDP=$(ip6tables -L INPUT -v -n | grep "ACCEPT     udp" | awk '{print $10}')

@@ -5,10 +5,10 @@ kind: ClusterConfig
 metadata:
   name: bottlerocket-cis-blog-eks
   region: us-east-1
-  version: '1.24'
+  version: '1.23'
 
 managedNodeGroups:
-  - name: bottlerocket-mng
+  - name: bottlerocket-mng2
     instanceType: m5.large
     desiredCapacity: 1
     amiFamily: Bottlerocket
@@ -26,7 +26,7 @@ managedNodeGroups:
         bootstrap-containers:
           # 3.4
           cis-bootstrap:
-            source: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-bootstrap-image:latest
+            source: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BOOTSTRAP_ECR_REPO:latest
             mode: once
         kernel:
           # 1.5.2
