@@ -15,6 +15,32 @@ function checkSysctlConfig()
     return 1
 }
 
+RECOMMENDATION="1.1.1.1 Ensure mounting of udf filesystems is disabled (Automated)"
+modprobe_check=$(modprobe -n -v udf | grep 'install')
+grep_check=$(grep -Fw udf /proc/modules)
+
+if [[[ $modprobe_check == "install /bin/true" ]] && [[ $grep_check == "" ]]];
+then
+    >&2 echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    >&2 echo "[FAIL] $RECOMMENDATION"
+    >&2 echo "Error Message: udf modprobe check=$modprobe_check udf grep check=$grep_check"
+fi
+
+RECOMMENDATION="1.3.1 Ensure dm-verity is configured (Automated)"
+verity_on=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print 20}')
+restart_on_corrupt=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print 31}')
+
+if [[[ $verity_on == "1" ]] && [[ $restart_on_corrupt == "restart_on_corruption" ]]];
+then
+    echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    echo "[FAIL] $RECOMMENDATION"
+    echo "Error Message: dm_verity=$verity_on dm_verity_restart=$restart_on_corrupt"
+fi
+
 RECOMMENDATION="3.1.1 Ensure packet redirect sending is disabled (Automated)"
 sysctlList=("net.ipv4.conf.all.send_redirects" "net.ipv4.conf.default.send_redirects")
 expectedValue=0
@@ -22,10 +48,10 @@ checkSysctlConfig
 
 
 if [ "$?" -eq "1" ]; then
-  >&2 echo "[PASS] $RECOMMENDATION"
+  echo "[PASS] $RECOMMENDATION"
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
 else
-  >&2 echo "[FAIL] $RECOMMENDATION"
+  echo "[FAIL] $RECOMMENDATION"
 fi
 
 RECOMMENDATION="3.2.2 Ensure ICMP redirects are not accepted (Automated)"
