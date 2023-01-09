@@ -1,7 +1,7 @@
 echo "This tool validates the Amazon EKS optimized AMI against CIS Bottlerocket Benchmark v1.0.0"
 
 Num_Of_Checks_Passed=0
-Total_Num_Of_Checks=10
+Total_Num_Of_Checks=23
 
 function checkSysctlConfig()
 {
@@ -16,23 +16,22 @@ function checkSysctlConfig()
 }
 
 RECOMMENDATION="1.1.1.1 Ensure mounting of udf filesystems is disabled (Automated)"
-modprobe_check=$(modprobe -n -v udf | grep 'install')
-grep_check=$(grep -Fw udf /proc/modules)
+mod_check=$(lsmod | grep udf)
 
-if [[[ $modprobe_check == "install /bin/true" ]] && [[ $grep_check == "" ]]];
+if [[ $mod_check == "" ]];
 then
     >&2 echo "[PASS] $RECOMMENDATION"
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
 else
     >&2 echo "[FAIL] $RECOMMENDATION"
-    >&2 echo "Error Message: udf modprobe check=$modprobe_check udf grep check=$grep_check"
+    >&2 echo "Error Message: udf modprobe check=$mod_check"
 fi
 
 RECOMMENDATION="1.3.1 Ensure dm-verity is configured (Automated)"
-verity_on=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print 20}')
-restart_on_corrupt=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print 31}')
+verity_on=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print $20}')
+restart_on_corrupt=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print $31}')
 
-if [[[ $verity_on == "1" ]] && [[ $restart_on_corrupt == "restart_on_corruption" ]]];
+if [[ $verity_on == "1" ]] && [[ $restart_on_corrupt == "restart_on_corruption" ]];
 then
     echo "[PASS] $RECOMMENDATION"
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
@@ -41,8 +40,98 @@ else
     echo "Error Message: dm_verity=$verity_on dm_verity_restart=$restart_on_corrupt"
 fi
 
+RECOMMENDATION="1.4.1 Ensure setuid programs do not create core dumps (Automated)"
+sysctlList=("fs.suid_dumpable")
+expectedValue=0
+checkSysctlConfig
+
+
+if [ "$?" -eq "1" ]; then
+  echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+  echo "[FAIL] $RECOMMENDATION"
+fi
+
+RECOMMENDATION="1.4.2 Ensure address space layout randomization (ASLR) is enabled (Automated)"
+sysctlList=("kernel.randomize_va_space")
+expectedValue=2
+checkSysctlConfig
+
+
+if [ "$?" -eq "1" ]; then
+  echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+  echo "[FAIL] $RECOMMENDATION"
+fi
+
+RECOMMENDATION="1.4.3 Ensure unprivileged eBPF is disabled (Automated)"
+sysctlList=("kernel.unprivileged_bpf_disabled")
+expectedValue=1
+checkSysctlConfig
+
+
+if [ "$?" -eq "1" ]; then
+  echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+  echo "[FAIL] $RECOMMENDATION"
+fi
+
+RECOMMENDATION="1.4.4 Ensure user namespaces are disabled (Automated)"
+sysctlList=("user.max_user_namespaces")
+expectedValue=0
+checkSysctlConfig
+
+
+if [ "$?" -eq "1" ]; then
+  echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+  echo "[FAIL] $RECOMMENDATION"
+fi
+
+RECOMMENDATION="1.5.1 Ensure SELinux is configured (Automated)"
+selinux_on=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print $13}')
+selinux_mode=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print $14}')
+
+if [[ $selinux_on == "selinux=1" ]] && [[ $selinux_mode == "enforcing=1" ]];
+then
+    echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    echo "[FAIL] $RECOMMENDATION"
+    echo "Error Message: selinux status=$selinux_on selinux enforcing mode=$selinux_mode"
+fi
+
+RECOMMENDATION="1.5.2 Ensure Lockdown is configured (Automated)"
+lockdown=$(grep -Fw '[integrity]' /sys/kernel/security/lockdown)
+
+if [[ $lockdown == "none [integrity] confidentiality" ]];
+then
+    echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    echo "[FAIL] $RECOMMENDATION"
+    echo "Error Message: lockdown=$lockdown"
+fi
+
 RECOMMENDATION="3.1.1 Ensure packet redirect sending is disabled (Automated)"
 sysctlList=("net.ipv4.conf.all.send_redirects" "net.ipv4.conf.default.send_redirects")
+expectedValue=0
+checkSysctlConfig
+
+
+if [ "$?" -eq "1" ]; then
+  echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+  echo "[FAIL] $RECOMMENDATION"
+fi
+
+RECOMMENDATION="3.2.1 Ensure source routed packets are not accepted (Automated)"
+sysctlList=("net.ipv4.conf.all.accept_source_route" "net.ipv4.conf.default.accept_source_route" "net.ipv6.conf.all.accept_source_route" "net.ipv6.conf.default.accept_source_route")
 expectedValue=0
 checkSysctlConfig
 
@@ -93,6 +182,56 @@ else
     echo "[FAIL] $RECOMMENDATION"
 fi
 
+RECOMMENDATION="3.2.5 Ensure broadcast ICMP requests are ignored (Automated)"
+sysctlList=("net.ipv4.icmp_echo_ignore_broadcasts")
+expectedValue=1
+checkSysctlConfig
+
+
+if [ "$?" -eq "1" ]; then
+    echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    echo "[FAIL] $RECOMMENDATION"
+fi
+
+RECOMMENDATION="3.2.6 Ensure bogus ICMP responses are ignored (Automated)"
+sysctlList=("net.ipv4.icmp_ignore_bogus_error_responses")
+expectedValue=1
+checkSysctlConfig
+
+
+if [ "$?" -eq "1" ]; then
+    echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    echo "[FAIL] $RECOMMENDATION"
+fi
+
+RECOMMENDATION="3.2.7 Ensure TCP SYN Cookies is enabled (Automated)"
+sysctlList=("net.ipv4.tcp_syncookies")
+expectedValue=1
+checkSysctlConfig
+
+
+if [ "$?" -eq "1" ]; then
+    echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    echo "[FAIL] $RECOMMENDATION"
+fi
+
+RECOMMENDATION="3.3.1 Ensure SCTP is disabled (Automated)"
+mod_check=$(lsmod | grep sctp)
+
+if [[ $mod_check == "" ]];
+then
+    >&2 echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    >&2 echo "[FAIL] $RECOMMENDATION"
+    >&2 echo "Error Message: sctp modprobe check=$mod_check"
+fi
 
 RECOMMENDATION="3.4.1.1 Ensure IPv4 default deny firewall policy (Automated)"
 inputChain=$(iptables -L | grep "Chain INPUT" | awk '{print $4}')

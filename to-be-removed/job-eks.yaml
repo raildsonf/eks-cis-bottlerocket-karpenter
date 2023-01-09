@@ -19,6 +19,6 @@ spec:
           imagePullPolicy: Always
           securityContext:
             capabilities:
-              add: ["SYS_ADMIN"]          
+              add: ["SYS_ADMIN", "NET_ADMIN"]          
             #privileged: true
       restartPolicy: Never
