@@ -1,3 +1,9 @@
+###############################################################################
+# All commands used to check the various audit values were sourced from the   #
+# CIS Bottlerocket Benchmark v1.0.0 unless the command was unavailable in     #
+# Alpine Linux, which was used as the base image for the validation container #
+###############################################################################
+
 echo "This tool validates the Amazon EKS optimized AMI against CIS Bottlerocket Benchmark v1.0.0"
 
 Num_Of_Checks_Passed=0
