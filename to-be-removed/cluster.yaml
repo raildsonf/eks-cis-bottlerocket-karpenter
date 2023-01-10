@@ -27,7 +27,7 @@ managedNodeGroups:
           # 3.4
           cis-bootstrap:
             source: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-bootstrap-image:latest
-            mode: once
+            mode: always
         kernel:
           # 1.5.2
           lockdown: "integrity"
