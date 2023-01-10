@@ -12,13 +12,20 @@ spec:
     spec:
       hostNetwork: true
       nodeSelector:
-         eks.amazonaws.com/nodegroup: bottlerocket-mng     
+         eks.amazonaws.com/nodegroup: bottlerocket-mng2     
       containers:
         - name: eks-cis-benchmark
-          image: 000474600478.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-validating-image
+          image: 984155596806.dkr.ecr.us-east-1.amazonaws.com/bottlerocket-cis-validation-image
           imagePullPolicy: Always
           securityContext:
             capabilities:
-              add: ["SYS_ADMIN", "NET_ADMIN"]          
+              add: ["SYS_ADMIN", "NET_ADMIN", "CAP_SYS_ADMIN"]          
             #privileged: true
+          volumeMounts:
+          - mountPath: /.bottlerocket/rootfs
+            name: btl-root
+      volumes:
+      - name: btl-root
+        hostPath:
+          path: /
       restartPolicy: Never

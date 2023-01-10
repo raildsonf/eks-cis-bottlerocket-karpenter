@@ -7,7 +7,7 @@
 echo "This tool validates the Amazon EKS optimized AMI against CIS Bottlerocket Benchmark v1.0.0"
 
 Num_Of_Checks_Passed=0
-Total_Num_Of_Checks=23
+Total_Num_Of_Checks=26
 
 function checkSysctlConfig()
 {
@@ -99,10 +99,10 @@ else
 fi
 
 RECOMMENDATION="1.5.1 Ensure SELinux is configured (Automated)"
-selinux_on=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print $13}')
-selinux_mode=$(grep -Fw "dm-mod.create=root,,,ro,0" /proc/cmdline | awk '{print $14}')
+selinux_on=$(chroot /.bottlerocket/rootfs sestatus | grep 'SELinux status:' | cut -d: -f2 | sed 's/^[[:blank:]]*//;s/[[:blank:]]*$//')
+selinux_mode=$(chroot /.bottlerocket/rootfs sestatus | grep 'Current mode:' | cut -d: -f2 | sed 's/^[[:blank:]]*//;s/[[:blank:]]*$//')
 
-if [[ $selinux_on == "selinux=1" ]] && [[ $selinux_mode == "enforcing=1" ]];
+if [[ $selinux_on == "enabled" ]] && [[ $selinux_mode == "enforcing" ]];
 then
     echo "[PASS] $RECOMMENDATION"
     Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
@@ -112,7 +112,7 @@ else
 fi
 
 RECOMMENDATION="1.5.2 Ensure Lockdown is configured (Automated)"
-lockdown=$(grep -Fw '[integrity]' /sys/kernel/security/lockdown)
+lockdown=$(cat /.bottlerocket/rootfs/sys/kernel/security/lockdown)
 
 if [[ $lockdown == "none [integrity] confidentiality" ]];
 then
@@ -121,6 +121,18 @@ then
 else
     echo "[FAIL] $RECOMMENDATION"
     echo "Error Message: lockdown=$lockdown"
+fi
+
+RECOMMENDATION="2.1.1.1 Ensure chrony is configured (Automated)"
+chrony=$(chroot /.bottlerocket/rootfs pgrep chronyd)
+
+if [[ $chrony != "" ]];
+then
+    echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    echo "[FAIL] $RECOMMENDATION"
+    echo "Error Message: chrony process is not running"
 fi
 
 RECOMMENDATION="3.1.1 Ensure packet redirect sending is disabled (Automated)"
@@ -377,6 +389,30 @@ then
 else
     echo "[FAIL] $RECOMMENDATION"
     echo "Error Message: InputTCP=$InputTCP InputUDP=$InputUDP InputICMP=$InputICMP OutputTCP=$OutputTCP OutputUDP=$OutputUDP OutputICMP=$OutputICMP"
+fi
+
+RECOMMENDATION="4.1.1.1 Ensure journald is configured to write logs to persistent disk (Automated)"
+journald=$(cat /.bottlerocket/rootfs/usr/lib/systemd/journald.conf.d/journald.conf | grep 'Storage')
+
+if [[ $journald == "Storage=persistent" ]];
+then
+    echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    echo "[FAIL] $RECOMMENDATION"
+    echo "Error Message: journald=$journald"
+fi
+
+RECOMMENDATION="4.1.2 Ensure permissions on journal files are configured (Automated)"
+journal_perms=$(chroot /.bottlerocket/rootfs find /var/log/journal -type f -perm /g+wx,o+rwx)
+
+if [[ $journal_perms == "" ]];
+then
+    echo "[PASS] $RECOMMENDATION"
+    Num_Of_Checks_Passed=$((Num_Of_Checks_Passed+1))
+else
+    echo "[FAIL] $RECOMMENDATION"
+    echo "Error Message: journal permissions=$journal_perms"
 fi
 
 echo "$Num_Of_Checks_Passed/$Total_Num_Of_Checks checks passed"
