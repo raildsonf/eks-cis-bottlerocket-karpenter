@@ -1,3 +1,37 @@
+### How to: Ambas as imagens foram buildadas e publicas no repositório do ECR de forma manual via Makefile.
+
+### Para buildar manualmente, execute:
+
+### setup:
+```bash
+amazon-linux-extras enable docker
+yum install -y docker
+systemctl enable docker
+ystemctl start docker
+usermod -aG docker $USER
+newgrp docker
+docker --version
+docker buildx version
+docker buildx create --name multiarch-builder --use
+docker buildx inspect --bootstrap
+```
+Rode o qemu via docker image: "The multiarch/qemu-user-static Docker container automatically sets up the necessary QEMU binaries inside the container, and it also registers them with Docker to enable cross-platform (multi-architecture) builds."
+```bash
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+```
+
+### build:
+```bash
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin CONTA-AWS.dkr.ecr.us-east-2.amazonaws.com
+```
+```bash
+cd cis-bottlerocket-images-iac/bottlerocket-cis-bootstrap-image/
+```
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t CONTA-AWS.dkr.ecr.us-east-2.amazonaws.com/bottlerocket-cis-bootstrap:bootstrap --push .
+```
+
+
 # Validating Amazon EKS optimized Bottlerocket AMI against the CIS Benchmark
 
 You will also need to configure the following environment variables:
