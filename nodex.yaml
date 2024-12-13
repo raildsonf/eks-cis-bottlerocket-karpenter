@@ -1,0 +1,185 @@
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: spot-b
+spec:
+  disruption:
+    budgets:
+    - nodes: 10%
+    consolidateAfter: 2m
+    consolidationPolicy: WhenEmptyOrUnderutilized
+  limits:
+    cpu: 1000
+    memory: 1000Gi
+  template:
+    metadata:
+      labels:
+        bottlerocket-b: run
+    spec:
+      expireAfter: 720h
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: bottlerocket-b
+      requirements:
+      - key: karpenter.sh/capacity-type
+        operator: In
+        values:
+        - spot
+      - key: capacity-spread
+        operator: In
+        values:
+        - 1-s
+        - 2-s
+        - 3-s
+        - 4-s
+        - 5-s
+      - key: kubernetes.io/arch
+        operator: In
+        values:
+        - amd64
+        - arm64
+      - key: karpenter.k8s.aws/instance-family
+        operator: In
+        values:
+        - t3
+        - t3a
+        - m5
+        - c5
+        - c5n
+        - c6g
+        - c7g
+        - c8g
+      - key: karpenter.k8s.aws/instance-size
+        operator: In
+        values:
+        - small
+        - medium
+        - large
+        - xlarge
+      terminationGracePeriod: 5m
+---
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  generation: 1
+  name: bottlerocket-b
+spec:
+  amiFamily: Bottlerocket
+  amiSelectorTerms:
+    - alias: bottlerocket@v1.26.0
+  blockDeviceMappings:
+  - deviceName: /dev/xvda
+    ebs:
+      deleteOnTermination: true
+      volumeSize: 20Gi
+      volumeType: gp3
+  - deviceName: /dev/xvdb
+    ebs:
+      encrypted: true
+      volumeSize: 20Gi
+      volumeType: gp3
+  instanceProfile: KarpenterNodeInstanceProfile-eks-dev
+  kubelet:
+    cpuCFSQuota: true
+    evictionHard:
+      memory.available: 5%
+      nodefs.available: 10%
+      nodefs.inodesFree: 10%
+    imageGCHighThresholdPercent: 85
+    imageGCLowThresholdPercent: 80
+    maxPods: 20
+    systemReserved:
+      cpu: 100m
+      ephemeral-storage: 1Gi
+      memory: 100Mi
+  metadataOptions:
+    httpEndpoint: enabled
+    httpProtocolIPv6: disabled
+    httpPutResponseHopLimit: 2
+    httpTokens: required
+  securityGroupSelectorTerms:
+  - tags:
+      karpenter.sh/security-group: eks-dev
+  subnetSelectorTerms:
+  - tags:
+      karpenter.sh/discovery: "true"
+  tags:
+    Cluster: eks-dev
+  userData: |
+    [settings.bootstrap-containers.cis-bootstrap]
+    "source" = "CONTA-AWS.dkr.ecr.us-east-2.amazonaws.com/bottlerocket-cis-bootstrap:bootstrap"
+    "mode" = "always"
+    "essential" = true
+    [settings.kernel.sysctl]
+    # 3.1.1
+    "net.ipv4.conf.all.send_redirects" = "0"
+    "net.ipv4.conf.default.send_redirects" = "0"
+    # 3.2.2
+    "net.ipv4.conf.all.accept_redirects" = "0"
+    "net.ipv4.conf.default.accept_redirects" = "0"
+    "net.ipv6.conf.all.accept_redirects" = "0"
+    "net.ipv6.conf.default.accept_redirects" = "0"
+    # 3.2.3
+    "net.ipv4.conf.all.secure_redirects" = "0"
+    "net.ipv4.conf.default.secure_redirects" = "0"
+    # 3.2.4
+    "net.ipv4.conf.all.log_martians" = "1"
+    "net.ipv4.conf.default.log_martians" = "1"
+---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: webtest-arm
+  name: webtest-arm
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: webtest-arm
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: webtest-arm
+    spec:
+      containers:
+      - image: httpd
+        name: httpd
+        resources: {}
+      nodeSelector:
+        bottlerocket-b: run
+        kubernetes.io/arch: arm64
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: webtest-amd
+  name: webtest-amd
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: webtest-amd
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: webtest-amd
+    spec:
+      containers:
+      - image: httpd
+        name: httpd
+        resources: {}
+      nodeSelector:
+        bottlerocket-b: run
+        kubernetes.io/arch: amd64
+status: {}
