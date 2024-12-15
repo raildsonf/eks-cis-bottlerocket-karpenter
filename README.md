@@ -4,14 +4,21 @@
 
 ### setup:
 ```bash
-amazon-linux-extras enable docker
-yum install -y docker
+yum install -y docker make
+```
+```bash
 systemctl enable docker
-ystemctl start docker
+systemctl start docker
+```
+```bash
 usermod -aG docker $USER
 newgrp docker
+```
+```bash
 docker --version
 docker buildx version
+```
+```bash
 docker buildx create --name multiarch-builder --use
 docker buildx inspect --bootstrap
 ```
@@ -19,8 +26,13 @@ Rode o qemu via docker image: "The multiarch/qemu-user-static Docker container a
 ```bash
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 ```
-
-### build:
+### build using Make or Step by step
+## Make
+cd bottlerocket-cis-bootstrap-image
+```bash
+make
+```
+## Step by step
 ```bash
 aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin CONTA-AWS.dkr.ecr.us-east-2.amazonaws.com
 ```
