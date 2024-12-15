@@ -26,18 +26,13 @@ all: image
 # image section
 ############################################################
 
-image: build-image push-image
+image: build-image
 
 build-image: 
-	@echo "Building the docker image: $(IMAGE_NAME):$(IMAGE_TAG) using ${VALIDATION_ECR_REPO}/Dockerfile..."
-	@docker build --no-cache  -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) .
-	#@docker build --no-cache -f ./${VALIDATION_ECR_REPO}/Dockerfile -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) 
-
-push-image: build-image
-	@echo "Pushing the docker image for $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) ..."	
 	aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin $(IMAGE_REPO)/$(IMAGE_NAME)
-	@docker push $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)
-	
+	@echo "Building the docker image: $(IMAGE_NAME):$(IMAGE_TAG) using ${BOOTSTRAP_ECR_REPO}/Dockerfile..."
+	@docker buildx build --no-cache --platform linux/amd64,linux/arm64 -t  $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) --push . 
+
 
 ############################################################
 # clean section
